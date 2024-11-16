@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pronunciation Practice</title>
+    <script>
+        async function startPractice() {
+            const languageSelect = document.getElementById('language');
+            const language = languageSelect.value;
+
+            const fruitResponse = await fetch('/get_random_fruit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language })
+            });
+
+            const fruitData = await fruitResponse.json();
+
+            if (fruitResponse.ok) {
+                document.getElementById('fruit-name').innerText = `Please pronounce: ${fruitData.fruit_name}`;
+                document.getElementById('selected-language').value = language;
+                document.getElementById('target-fruit').value = fruitData.fruit_name;
+            } else {
+                document.getElementById('fruit-name').innerText = `Error: ${fruitData.error}`;
+            }
+        }
+
+        async function startRecording() {
+            const language = document.getElementById('selected-language').value;
+            const targetFruit = document.getElementById('target-fruit').value;
+
+            // Start recording timer
+            let countdown = document.getElementById('recording-timer');
+            let duration = 5;
+            countdown.innerText = `Recording: ${duration}s`;
+            
+            const timerInterval = setInterval(() => {
+                duration--;
+                countdown.innerText = `Recording: ${duration}s`;
+                if (duration <= 0) {
+                    clearInterval(timerInterval);
+                    countdown.innerText = "Recording finished.";
+                }
+            }, 1000);
+
+            // Send a request to start recording
+            const response = await fetch('/record_pronunciation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ language, target_fruit: targetFruit })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                document.getElementById('transcription').innerText = `Your Pronunciation: ${result.transcription}`;
+                document.getElementById('pronunciation-feedback').innerText = `Feedback: ${result.feedback}`;
+                document.getElementById('record-time').innerText = `Recording Time: ${result.record_time}s`;
+                document.getElementById('process-time').innerText = `Processing Time: ${result.process_time}s`;
+            } else {
+                document.getElementById('transcription').innerText = `Error: ${result.error}`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Fruit Pronunciation Practice</h1>
+    <label for="language">Choose Language:</label>
+    <select id="language">
+        <option value="en">English</option>
+        <option value="yue">Cantonese</option>
+        <option value="cmn">Mandarin</option>
+    </select>
+    <button onclick="startPractice()">Start Practice</button>
+
+    <p id="fruit-name">Click "Start Practice" to receive a fruit name.</p>
+    <input type="hidden" id="selected-language">
+    <input type="hidden" id="target-fruit">
+    <button onclick="startRecording()">🎤 Pronounce Fruit Name</button>
+
+    <p id="recording-timer">Recording timer will appear here.</p>
+    <p id="transcription">Your pronunciation will appear here.</p>
+    <p id="pronunciation-feedback">Feedback will appear here.</p>
+    <p id="record-time">Recording Time:</p>
+    <p id="process-time">Processing Time:</p>
+</body>
+</html>
